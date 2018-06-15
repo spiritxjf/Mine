@@ -8,6 +8,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.util.Log
+import android.view.InputDevice
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import java.sql.Time
@@ -86,10 +88,10 @@ class MineView
 
                 if (mMineMap.getCellValue(row, col) == -1)
                 {
-                    canvas!!.drawText("*", col * mCellWidth + mCellWidth / 4, (row + 1) * mCellWidth - mCellWidth / 4, mCellPaint)
+                    canvas.drawText("*", col * mCellWidth + mCellWidth / 4, (row + 1) * mCellWidth - mCellWidth / 4, mCellPaint)
                 }
                 else if (mMineMap.getCellValue(row, col) != 0){
-                    canvas!!.drawText(Integer.toString(mMineMap.getCellValue(row, col)), col * mCellWidth + mCellWidth / 4, (row + 1) * mCellWidth - mCellWidth / 4, mCellPaint)
+                    canvas.drawText(Integer.toString(mMineMap.getCellValue(row, col)), col * mCellWidth + mCellWidth / 4, (row + 1) * mCellWidth - mCellWidth / 4, mCellPaint)
                 }
             }
         }
@@ -107,9 +109,13 @@ class MineView
         }
     }
 
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         val x = event!!.getX().toInt()
-        val y = event!!.getY().toInt()
+        val y = event.getY().toInt()
+        var what = event.buttonState
+
+        Log.d("Mine", event.toString())
 
         var cell:Cell? = getCellAtPoint(x, y)
 
@@ -119,19 +125,21 @@ class MineView
         }
 
         if (event.action == MotionEvent.ACTION_UP && cell != null) {
-            if (System.currentTimeMillis() - timestamp > 400)
+            if ((event.source != InputDevice.SOURCE_MOUSE && System.currentTimeMillis() - timestamp > 400) ||
+                    (event.source == InputDevice.SOURCE_MOUSE && what == MotionEvent.BUTTON_SECONDARY))
             {
-                if (!mMineMap.getVisibility(cell!!.row, cell!!.col)) {
-                    mMineMap.markCell(cell!!.row, cell!!.col)
+                if (!mMineMap.getVisibility(cell.row, cell.col)) {
+                    mMineMap.markCell(cell.row, cell.col)
                 }
             }
-            else {
-                if (mMineMap.getMarked(cell!!.row, cell!!.col))
+            else if ((event.source == InputDevice.SOURCE_MOUSE && what == MotionEvent.BUTTON_PRIMARY) ||
+                    event.source != InputDevice.SOURCE_MOUSE){
+                if (mMineMap.getMarked(cell.row, cell.col))
                 {
                     return false
                 }
 
-                mMineMap.displayMap(cell!!.row, cell!!.col, 1)
+                mMineMap.displayMap(cell.row, cell.col, 1)
                 if (mMineMap.isLose())
                 {
                     mMineMap.displayAllMap()
